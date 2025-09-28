@@ -1,0 +1,49 @@
+version: "3.9"
+
+services:
+  api:
+    build:
+      context: .
+      dockerfile: deployment/Dockerfile
+    env_file: .env
+    depends_on:
+      - postgres
+      - redis
+    restart: unless-stopped
+
+  celery_worker:
+    build:
+      context: .
+      dockerfile: deployment/Dockerfile.celery
+    env_file: .env
+    depends_on:
+      - postgres
+      - redis
+    restart: unless-stopped
+
+  celery_beat:
+    build:
+      context: .
+      dockerfile: deployment/Dockerfile.celery
+    command: celery -A app.core.celery_app.celery_app beat --loglevel=info
+    env_file: .env
+    depends_on:
+      - redis
+    restart: unless-stopped
+
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: register
+      POSTGRES_PASSWORD: register
+      POSTGRES_DB: user_activation
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+
+volumes:
+  postgres_data:

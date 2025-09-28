@@ -1,0 +1,1 @@
+-- SQL migration for creating the users table.

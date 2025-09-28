@@ -1,0 +1,10 @@
+fastapi
+uvicorn[standard]
+celery
+redis
+psycopg[binary]
+psycopg-pool
+python-dotenv
+dependency-injector
+pydantic[email]
+passlib[bcrypt]
