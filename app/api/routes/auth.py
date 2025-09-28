@@ -51,9 +51,11 @@ async def resend_activation_code(
 @router.post("/activate", status_code=status.HTTP_200_OK)
 async def activate_user(
     payload: ActivationVerify,
+    current_user: dict[str, Any] = Depends(get_authenticated_user),
     service: UserService = Depends(get_user_service),
 ) -> dict[str, str]:
-    activated = await service.activate(payload.email, payload.code)
+    email = current_user["email"]
+    activated = await service.activate(email, payload.code)
     if not activated:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid or expired activation code")
 

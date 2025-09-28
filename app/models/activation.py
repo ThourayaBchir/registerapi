@@ -1,14 +1,9 @@
 from __future__ import annotations
 
-from pydantic import BaseModel, EmailStr, Field, field_validator
-
-
-class ActivationRequest(BaseModel):
-    email: EmailStr
+from pydantic import BaseModel, Field, field_validator
 
 
 class ActivationVerify(BaseModel):
-    email: EmailStr
     code: str = Field(pattern=r"^\d{4}$", min_length=4, max_length=4)
 
     @field_validator("code")

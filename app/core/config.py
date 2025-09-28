@@ -7,8 +7,8 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 class Settings(BaseSettings):
     database_url: str
     redis_url: str
-    email_api_url: HttpUrl
-    system_email: EmailStr
+    email_api_url: HttpUrl | None = None
+    system_email: EmailStr = "noreply@example.com"
     basic_auth_username: str = "admin"
     basic_auth_password: str = "changeme"
     secret_key: str

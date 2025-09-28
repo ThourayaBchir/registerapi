@@ -82,7 +82,11 @@ async def test_register_conflict_for_active_user(api_client):
 
     await client.post("/auth/register", json={"email": "eve@example.com", "password": "Passw0rd!1"})
     code = email_service.sent_codes["eve@example.com"]
-    await client.post("/auth/activate", json={"email": "eve@example.com", "code": code})
+    await client.post(
+        "/auth/activate",
+        json={"code": code},
+        auth=BasicAuth("eve@example.com", "Passw0rd!1"),
+    )
 
     response = await client.post("/auth/register", json={"email": "eve@example.com", "password": "Passw0rd!1"})
     assert response.status_code == status.HTTP_409_CONFLICT
@@ -103,15 +107,45 @@ async def test_activate_endpoint_success(api_client):
     await client.post("/auth/register", json={"email": "carol@example.com", "password": "Passw0rd!1"})
     code = email_service.sent_codes["carol@example.com"]
 
-    response = await client.post("/auth/activate", json={"email": "carol@example.com", "code": code})
+    response = await client.post(
+        "/auth/activate",
+        json={"code": code},
+        auth=BasicAuth("carol@example.com", "Passw0rd!1"),
+    )
     assert response.status_code == status.HTTP_200_OK
     assert response.json()["detail"] == "Account activated"
 
-    invalid = await client.post("/auth/activate", json={"email": "carol@example.com", "code": code})
+    invalid = await client.post(
+        "/auth/activate",
+        json={"code": code},
+        auth=BasicAuth("carol@example.com", "Passw0rd!1"),
+    )
     assert invalid.status_code == status.HTTP_400_BAD_REQUEST
 
-    wrong_code = await client.post("/auth/activate", json={"email": "carol@example.com", "code": "9999"})
+    wrong_code = await client.post(
+        "/auth/activate",
+        json={"code": "9999"},
+        auth=BasicAuth("carol@example.com", "Passw0rd!1"),
+    )
     assert wrong_code.status_code == status.HTTP_400_BAD_REQUEST
+
+
+@pytest.mark.asyncio
+async def test_activate_requires_basic_auth(api_client):
+    client, email_service = api_client
+
+    await client.post("/auth/register", json={"email": "unauth@example.com", "password": "Passw0rd!1"})
+    code = email_service.sent_codes["unauth@example.com"]
+
+    response = await client.post("/auth/activate", json={"code": code})
+    assert response.status_code == status.HTTP_401_UNAUTHORIZED
+
+    wrong = await client.post(
+        "/auth/activate",
+        json={"code": code},
+        auth=BasicAuth("unauth@example.com", "wrong"),
+    )
+    assert wrong.status_code == status.HTTP_401_UNAUTHORIZED
 
 
 @pytest.mark.asyncio
@@ -139,7 +173,11 @@ async def test_resend_active_user_conflict(api_client):
 
     await client.post("/auth/register", json={"email": "zoe@example.com", "password": "Passw0rd!1"})
     code = email_service.sent_codes["zoe@example.com"]
-    await client.post("/auth/activate", json={"email": "zoe@example.com", "code": code})
+    await client.post(
+        "/auth/activate",
+        json={"code": code},
+        auth=BasicAuth("zoe@example.com", "Passw0rd!1"),
+    )
 
     response = await client.post("/auth/resend", auth=BasicAuth("zoe@example.com", "Passw0rd!1"))
     assert response.status_code == status.HTTP_409_CONFLICT
