@@ -4,7 +4,7 @@ import os
 
 import pytest
 import pytest_asyncio
-from fastapi import FastAPI
+from fastapi import status
 from httpx import ASGITransport, AsyncClient, BasicAuth
 
 from app.api.deps import get_db_connection, get_user_service
@@ -62,7 +62,7 @@ async def test_register_endpoint_sends_code(api_client):
     client, email_service = api_client
 
     response = await client.post("/auth/register", json={"email": "alice@example.com", "password": "Passw0rd!1"})
-    assert response.status_code == 202
+    assert response.status_code == status.HTTP_202_ACCEPTED
     assert response.json()["detail"] == "Activation email sent"
     assert "alice@example.com" in email_service.sent_codes
 
@@ -73,7 +73,27 @@ async def test_register_conflict_for_pending_user(api_client):
 
     await client.post("/auth/register", json={"email": "bob@example.com", "password": "Passw0rd!1"})
     response = await client.post("/auth/register", json={"email": "bob@example.com", "password": "Passw0rd!1"})
-    assert response.status_code == 409
+    assert response.status_code == status.HTTP_409_CONFLICT
+
+
+@pytest.mark.asyncio
+async def test_register_conflict_for_active_user(api_client):
+    client, email_service = api_client
+
+    await client.post("/auth/register", json={"email": "eve@example.com", "password": "Passw0rd!1"})
+    code = email_service.sent_codes["eve@example.com"]
+    await client.post("/auth/activate", json={"email": "eve@example.com", "code": code})
+
+    response = await client.post("/auth/register", json={"email": "eve@example.com", "password": "Passw0rd!1"})
+    assert response.status_code == status.HTTP_409_CONFLICT
+
+
+@pytest.mark.asyncio
+async def test_register_invalid_payload_returns_422(api_client):
+    client, _ = api_client
+
+    response = await client.post("/auth/register", json={"email": "invalid-email", "password": "short"})
+    assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
 
 
 @pytest.mark.asyncio
@@ -84,11 +104,14 @@ async def test_activate_endpoint_success(api_client):
     code = email_service.sent_codes["carol@example.com"]
 
     response = await client.post("/auth/activate", json={"email": "carol@example.com", "code": code})
-    assert response.status_code == 200
+    assert response.status_code == status.HTTP_200_OK
     assert response.json()["detail"] == "Account activated"
 
     invalid = await client.post("/auth/activate", json={"email": "carol@example.com", "code": code})
-    assert invalid.status_code == 400
+    assert invalid.status_code == status.HTTP_400_BAD_REQUEST
+
+    wrong_code = await client.post("/auth/activate", json={"email": "carol@example.com", "code": "9999"})
+    assert wrong_code.status_code == status.HTTP_400_BAD_REQUEST
 
 
 @pytest.mark.asyncio
@@ -99,9 +122,24 @@ async def test_resend_endpoint_requires_auth_and_sends_new_code(api_client):
     first_code = email_service.sent_codes["dave@example.com"]
 
     response = await client.post("/auth/resend", auth=BasicAuth("dave@example.com", "Passw0rd!1"))
-    assert response.status_code == 202
+    assert response.status_code == status.HTTP_202_ACCEPTED
     assert response.json()["detail"] == "Activation email resent"
     assert email_service.sent_codes["dave@example.com"] != first_code
 
     unauthorized = await client.post("/auth/resend", auth=BasicAuth("dave@example.com", "wrong"))
-    assert unauthorized.status_code == 401
+    assert unauthorized.status_code == status.HTTP_401_UNAUTHORIZED
+
+    missing_auth = await client.post("/auth/resend")
+    assert missing_auth.status_code == status.HTTP_401_UNAUTHORIZED
+
+
+@pytest.mark.asyncio
+async def test_resend_active_user_conflict(api_client):
+    client, email_service = api_client
+
+    await client.post("/auth/register", json={"email": "zoe@example.com", "password": "Passw0rd!1"})
+    code = email_service.sent_codes["zoe@example.com"]
+    await client.post("/auth/activate", json={"email": "zoe@example.com", "code": code})
+
+    response = await client.post("/auth/resend", auth=BasicAuth("zoe@example.com", "Passw0rd!1"))
+    assert response.status_code == status.HTTP_409_CONFLICT
