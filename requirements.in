@@ -11,6 +11,10 @@ httpx
 passlib[bcrypt]
 bcrypt<5
 python-dotenv
+scalar-fastapi
 pytest
 pytest-asyncio
 pytest-mock
+debugpy
+black
+ruff

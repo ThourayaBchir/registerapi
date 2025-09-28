@@ -1,25 +1,20 @@
-FROM python:3.11-slim AS builder
+FROM python:3-slim
 
-ENV PYTHONDONTWRITEBYTECODE=1 \
-    PYTHONUNBUFFERED=1
+EXPOSE 8000
 
-WORKDIR /app
+# Keeps Python from generating .pyc files in the container
+ENV PYTHONDONTWRITEBYTECODE=1
 
-COPY requirements.txt requirements.txt
+# Turns off buffering for easier container logging
+ENV PYTHONUNBUFFERED=1
 
-RUN python -m venv /opt/venv \
-    && /opt/venv/bin/pip install --upgrade pip \
-    && /opt/venv/bin/pip install --no-cache-dir -r requirements.txt
-
-FROM python:3.11-slim
-
-ENV PYTHONDONTWRITEBYTECODE=1 \
-    PYTHONUNBUFFERED=1 \
-    PATH="/opt/venv/bin:$PATH"
+# Install pip requirements
+COPY requirements.txt .
+RUN python -m pip install -r requirements.txt
 
 WORKDIR /app
-
-COPY --from=builder /opt/venv /opt/venv
 COPY ./app ./app
 
-ENV PYTHONPATH=/app
+# Creates a non-root user with an explicit UID and adds permission to access the /app folder
+RUN adduser -u 1111 --disabled-password --gecos "" appuser && chown -R appuser /app
+USER appuser

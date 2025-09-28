@@ -17,7 +17,7 @@ celery_app.conf.update(
     task_default_queue="default",
 )
 
-celery_app.autodiscover_tasks(["app.tasks"])
+celery_app.autodiscover_tasks(["app"])
 
 
 __all__ = ["celery_app"]

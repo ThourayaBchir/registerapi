@@ -12,9 +12,9 @@ from app.repositories.user import UserRepository
 @pytest.mark.asyncio
 async def test_basic_auth_success(db_conn) -> None:
     repo = UserRepository(db_conn)
-    await repo.create_user("alice@example.com", hash_password("SuperSecret1"))
+    await repo.create_user("alice@example.com", hash_password("SuperSecret1!"))
 
-    credentials = HTTPBasicCredentials(username="alice@example.com", password="SuperSecret1")
+    credentials = HTTPBasicCredentials(username="alice@example.com", password="SuperSecret1!")
     user = await authenticate_basic_user(credentials, repo)
 
     assert user["email"] == "alice@example.com"
@@ -24,7 +24,7 @@ async def test_basic_auth_success(db_conn) -> None:
 @pytest.mark.asyncio
 async def test_basic_auth_wrong_password(db_conn) -> None:
     repo = UserRepository(db_conn)
-    await repo.create_user("bob@example.com", hash_password("CorrectHorse"))
+    await repo.create_user("bob@example.com", hash_password("CorrectHorse1!"))
 
     credentials = HTTPBasicCredentials(username="bob@example.com", password="WrongPassword")
     with pytest.raises(HTTPException) as exc:

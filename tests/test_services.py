@@ -5,7 +5,7 @@ import pytest_asyncio
 from pydantic import ValidationError
 from pytest_mock import MockerFixture
 
-from app.core.config import Settings, get_settings
+from app.core.config import Settings
 from app.repositories.activation import ActivationRepository
 from app.repositories.user import UserRepository
 from app.services.user import (
@@ -31,23 +31,39 @@ def test_user_create_password_min_length() -> None:
         UserCreate(email="short@example.com", password="short")
 
 
+@pytest.mark.parametrize(
+    "password",
+    [
+        "alllowercase1!",
+        "ALLUPPERCASE1!",
+        "NoDigits!!",
+        "NoSpecial11",
+    ],
+)
+def test_user_create_password_requires_complexity(password: str) -> None:
+    from app.models.user import UserCreate
+
+    with pytest.raises(ValidationError):
+        UserCreate(email="complex@example.com", password=password)
+
+
+def test_user_create_password_disallows_internal_whitespace() -> None:
+    from app.models.user import UserCreate
+
+    with pytest.raises(ValidationError):
+        UserCreate(email="space2@example.com", password="Valid One1!")
+
+
 def test_user_create_valid_payload() -> None:
     from app.models.user import UserCreate
 
-    payload = UserCreate(email="john@example.com", password="LongEnough1")
+    payload = UserCreate(email="john@example.com", password="LongEnough1!")
     assert payload.email == "john@example.com"
 
 
 @pytest_asyncio.fixture(autouse=True)
-async def override_settings(monkeypatch):
-    monkeypatch.setenv("DATABASE_URL", "postgresql://register:register@postgres:5432/user_activation")
-    monkeypatch.setenv("REDIS_URL", "redis://redis:6379/0")
-    monkeypatch.setenv("EMAIL_API_URL", "https://localhost/v1/send")
-    monkeypatch.setenv("SYSTEM_EMAIL", "noreply@example.com")
-    monkeypatch.setenv("SECRET_KEY", "secret")
-    get_settings.cache_clear()  # type: ignore[attr-defined]
+async def override_settings(settings_env):
     yield
-    get_settings.cache_clear()  # type: ignore[attr-defined]
 
 
 @pytest_asyncio.fixture
@@ -98,7 +114,7 @@ async def test_register_existing_pending_user_raises(service_components):
     await service.register("pending@example.com", "Passw0rd!1")
 
     with pytest.raises(UserPendingActivationError):
-        await service.register("pending@example.com", "AnotherPass1")
+        await service.register("pending@example.com", "AnotherPass1!")
 
 
 @pytest.mark.asyncio
@@ -109,7 +125,7 @@ async def test_register_existing_active_user_raises(service_components):
     await service.activate("active@example.com", registration.code)
 
     with pytest.raises(UserAlreadyActiveError):
-        await service.register("active@example.com", "NewPass123")
+        await service.register("active@example.com", "NewPass123!")
 
     user = await users.get_user_by_email("active@example.com")
     assert user["is_active"] is True

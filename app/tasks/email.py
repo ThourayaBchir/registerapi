@@ -33,7 +33,7 @@ def send_activation_email(self, email: str, code: str, ttl_seconds: int) -> None
 
     try:
         response = httpx.post(
-            settings.email_api_url,
+            str(settings.email_api_url),
             json=payload,
             timeout=10,
         )
@@ -41,4 +41,4 @@ def send_activation_email(self, email: str, code: str, ttl_seconds: int) -> None
         _LOGGER.info("Activation email dispatched via API", extra={"to": email})
     except Exception as exc:  # noqa: BLE001
         _LOGGER.warning("Activation email send failed, retrying", exc_info=exc)
-        raise self.retry(exc=exc)
+        raise self.retry(exc=exc) from exc
