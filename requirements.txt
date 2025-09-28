@@ -8,7 +8,6 @@ anyio==4.11.0
     # via
     #   httpx
     #   starlette
-    #   watchfiles
 bcrypt==4.3.0
     # via
     #   -r requirements.in
@@ -48,8 +47,6 @@ h11==0.16.0
     #   uvicorn
 httpcore==1.0.9
     # via httpx
-httptools==0.6.4
-    # via uvicorn
 httpx==0.28.1
     # via -r requirements.in
 idna==3.10
@@ -103,9 +100,6 @@ python-dotenv==1.1.1
     # via
     #   -r requirements.in
     #   pydantic-settings
-    #   uvicorn
-pyyaml==6.0.3
-    # via uvicorn
 redis==6.4.0
     # via -r requirements.in
 six==1.17.0
@@ -133,16 +127,10 @@ tzdata==2025.2
     # via kombu
 uvicorn==0.37.0
     # via -r requirements.in
-uvloop==0.21.0
-    # via uvicorn
 vine==5.1.0
     # via
     #   amqp
     #   celery
     #   kombu
-watchfiles==1.1.0
-    # via uvicorn
 wcwidth==0.2.14
     # via prompt-toolkit
-websockets==15.0.1
-    # via uvicorn

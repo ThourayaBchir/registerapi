@@ -8,8 +8,8 @@ _settings = get_settings()
 
 celery_app = Celery(
     "user_activation",
-    broker=_settings.redis_url,
-    backend=_settings.redis_url,
+    broker=_settings.celery_broker_url,
+    backend=_settings.celery_result_backend,
 )
 
 celery_app.conf.update(
