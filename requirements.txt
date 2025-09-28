@@ -8,8 +8,10 @@ anyio==4.11.0
     # via
     #   starlette
     #   watchfiles
-bcrypt==5.0.0
-    # via passlib
+bcrypt==4.3.0
+    # via
+    #   -r requirements.in
+    #   passlib
 billiard==4.2.2
     # via celery
 celery==5.5.3
@@ -67,8 +69,11 @@ pydantic==2.11.9
     # via
     #   -r requirements.in
     #   fastapi
+    #   pydantic-settings
 pydantic-core==2.33.2
     # via pydantic
+pydantic-settings==2.11.0
+    # via -r requirements.in
 pygments==2.19.2
     # via pytest
 pytest==8.4.2
@@ -82,6 +87,7 @@ python-dateutil==2.9.0.post0
 python-dotenv==1.1.1
     # via
     #   -r requirements.in
+    #   pydantic-settings
     #   uvicorn
 pyyaml==6.0.3
     # via uvicorn
@@ -95,13 +101,19 @@ starlette==0.48.0
     # via fastapi
 typing-extensions==4.15.0
     # via
+    #   anyio
     #   fastapi
+    #   psycopg
     #   psycopg-pool
     #   pydantic
     #   pydantic-core
+    #   pytest-asyncio
+    #   starlette
     #   typing-inspection
 typing-inspection==0.4.1
-    # via pydantic
+    # via
+    #   pydantic
+    #   pydantic-settings
 tzdata==2025.2
     # via kombu
 uvicorn==0.37.0

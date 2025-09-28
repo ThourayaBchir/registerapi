@@ -7,6 +7,8 @@ psycopg-pool
 python-dotenv
 dependency-injector
 pydantic[email]
+pydantic-settings
 passlib[bcrypt]
+bcrypt<5
 pytest
 pytest-asyncio

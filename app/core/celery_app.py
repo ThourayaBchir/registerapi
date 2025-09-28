@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from celery import Celery
 
 from app.core.config import get_settings
@@ -13,4 +15,7 @@ def configure_celery() -> Celery:
     return celery_app
 
 
-configure_celery()
+def get_celery_app() -> Celery:
+    if not celery_app.conf.broker_url:
+        configure_celery()
+    return celery_app
