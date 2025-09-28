@@ -80,7 +80,10 @@ pytest==8.4.2
     # via
     #   -r requirements.in
     #   pytest-asyncio
+    #   pytest-mock
 pytest-asyncio==1.2.0
+    # via -r requirements.in
+pytest-mock==3.15.1
     # via -r requirements.in
 python-dateutil==2.9.0.post0
     # via celery

@@ -13,6 +13,7 @@ class Settings(BaseSettings):
     basic_auth_username: str = "admin"
     basic_auth_password: str = "changeme"
     secret_key: str
+    activation_code_ttl_seconds: int = 60
 
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
 

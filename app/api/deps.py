@@ -53,15 +53,23 @@ def get_email_service() -> EmailService:
 
 async def get_user_service(
     users: UserRepository = Depends(get_user_repository),
+    codes: ActivationRepository = Depends(get_activation_repository),
     email_service: EmailService = Depends(get_email_service),
+    settings: Settings = Depends(get_settings),
 ) -> UserService:
-    return UserService(users=users, email_service=email_service)
+    return UserService(
+        users=users,
+        activation_codes=codes,
+        email_service=email_service,
+        settings=settings,
+    )
 
 
 async def get_activation_service(
     codes: ActivationRepository = Depends(get_activation_repository),
+    users: UserRepository = Depends(get_user_repository),
 ) -> ActivationService:
-    return ActivationService(codes=codes)
+    return ActivationService(codes=codes, users=users)
 
 
 async def authenticate_basic_user(
