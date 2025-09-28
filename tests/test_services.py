@@ -5,7 +5,7 @@ import pytest_asyncio
 from pydantic import ValidationError
 from pytest_mock import MockerFixture
 
-from app.core.config import Settings
+from app.core.config import Settings, get_settings
 from app.repositories.activation import ActivationRepository
 from app.repositories.user import UserRepository
 from app.services.user import (
@@ -38,6 +38,18 @@ def test_user_create_valid_payload() -> None:
     assert payload.email == "john@example.com"
 
 
+@pytest_asyncio.fixture(autouse=True)
+async def override_settings(monkeypatch):
+    monkeypatch.setenv("DATABASE_URL", "postgresql://register:register@postgres:5432/user_activation")
+    monkeypatch.setenv("REDIS_URL", "redis://redis:6379/0")
+    monkeypatch.setenv("EMAIL_API_URL", "https://localhost/v1/send")
+    monkeypatch.setenv("SYSTEM_EMAIL", "noreply@example.com")
+    monkeypatch.setenv("SECRET_KEY", "secret")
+    get_settings.cache_clear()  # type: ignore[attr-defined]
+    yield
+    get_settings.cache_clear()  # type: ignore[attr-defined]
+
+
 @pytest_asyncio.fixture
 async def service_components(mocker: MockerFixture, db_conn):
     users = UserRepository(db_conn)
@@ -47,9 +59,12 @@ async def service_components(mocker: MockerFixture, db_conn):
     settings = Settings(
         database_url="postgresql://register:register@postgres:5432/user_activation",
         redis_url="redis://redis:6379/0",
-        smtp_host="mail",
+        email_api_url="https://localhost/v1/send",
+        system_email="noreply@example.com",
         secret_key="secret",
         activation_code_ttl_seconds=60,
+        basic_auth_username="admin",
+        basic_auth_password="changeme",
     )
     service = UserService(users, codes, email_service, settings)
     return service, email_service, users, codes
@@ -62,7 +77,7 @@ async def test_register_and_activate_flow(service_components):
     result = await service.register("flow@example.com", "Passw0rd!1")
 
     assert isinstance(result, ActivationResult)
-    email_service.send_activation.assert_awaited_once()
+    email_service.send_activation.assert_awaited_once_with("flow@example.com", result.code, 60)
 
     user = await users.get_user_by_email("flow@example.com")
     assert user is not None and user["is_active"] is False
@@ -109,7 +124,7 @@ async def test_request_activation_code_flow(service_components):
     email_service.send_activation.reset_mock()
     result = await service.request_activation_code("resend@example.com")
 
-    email_service.send_activation.assert_awaited_once()
+    email_service.send_activation.assert_awaited_once_with("resend@example.com", result.code, 60)
     assert isinstance(result, ActivationResult)
 
     latest = await codes.latest_code("resend@example.com")

@@ -1,15 +1,14 @@
 from functools import lru_cache
 
+from pydantic import EmailStr, HttpUrl
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
     database_url: str
     redis_url: str
-    smtp_host: str
-    smtp_port: int = 1025
-    smtp_username: str | None = None
-    smtp_password: str | None = None
+    email_api_url: HttpUrl
+    system_email: EmailStr
     basic_auth_username: str = "admin"
     basic_auth_password: str = "changeme"
     secret_key: str

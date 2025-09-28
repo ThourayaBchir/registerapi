@@ -72,11 +72,12 @@ class UserService:
         return True
 
     async def _issue_activation_code(self, email: str) -> ActivationResult:
+        ttl_seconds = self._settings.activation_code_ttl_seconds
         code = generate_code()
         await self._activation_codes.create_code(
             email=email,
             code=code,
-            ttl_seconds=self._settings.activation_code_ttl_seconds,
+            ttl_seconds=ttl_seconds,
         )
-        await self._email_service.send_activation(email, code)
+        await self._email_service.send_activation(email, code, ttl_seconds)
         return ActivationResult(email=email, code=code)

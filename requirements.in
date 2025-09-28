@@ -8,6 +8,7 @@ python-dotenv
 dependency-injector
 pydantic[email]
 pydantic-settings
+httpx
 passlib[bcrypt]
 bcrypt<5
 pytest
