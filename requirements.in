@@ -8,3 +8,5 @@ python-dotenv
 dependency-injector
 pydantic[email]
 passlib[bcrypt]
+pytest
+pytest-asyncio

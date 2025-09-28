@@ -1,2 +1,2 @@
-async def test_placeholder() -> None:
+def test_placeholder() -> None:
     assert True
