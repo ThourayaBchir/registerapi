@@ -79,5 +79,7 @@ class UserService:
             code=code,
             ttl_seconds=ttl_seconds,
         )
+        print("--------------------")
+        print(code)
         await self._email_service.send_activation(email, code, ttl_seconds)
         return ActivationResult(email=email, code=code)

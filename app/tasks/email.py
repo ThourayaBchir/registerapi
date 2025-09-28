@@ -4,15 +4,22 @@ import logging
 from typing import Any
 
 import httpx
-from celery import shared_task
 
+from app.core.celery_app import celery_app
 from app.core.config import get_settings
 from app.utils.email import render_activation_email
 
 _LOGGER = logging.getLogger(__name__)
 
 
-@shared_task(bind=True, name="send_activation_email", max_retries=5, retry_backoff=True, retry_jitter=True, autoretry_for=(Exception,))
+@celery_app.task(
+    bind=True,
+    name="send_activation_email",
+    max_retries=5,
+    retry_backoff=True,
+    retry_jitter=True,
+    autoretry_for=(Exception,),
+)
 def send_activation_email(self, email: str, code: str, ttl_seconds: int) -> None:
     settings = get_settings()
     subject, body = render_activation_email(code, ttl_seconds)

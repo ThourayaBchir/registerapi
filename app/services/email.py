@@ -1,10 +1,9 @@
-from abc import ABC, abstractmethod
+from __future__ import annotations
 
 from app.tasks.email import send_activation_email
 
 
-class EmailService(ABC):
-    @abstractmethod
+class EmailService:
     async def send_activation(self, email: str, code: str, ttl_seconds: int) -> None:
         raise NotImplementedError
 
@@ -16,4 +15,4 @@ class CeleryEmailService(EmailService):
         self._queue = queue
 
     async def send_activation(self, email: str, code: str, ttl_seconds: int) -> None:
-        send_activation_email.apply_async(args=(email, code, ttl_seconds), queue=self._queue)
+        send_activation_email.delay(email, code, ttl_seconds)

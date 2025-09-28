@@ -5,16 +5,20 @@ services:
     build:
       context: .
       dockerfile: deployment/Dockerfile
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
     env_file: .env
     depends_on:
       - postgres
       - redis
+    ports:
+      - "8000:8000"
     restart: unless-stopped
 
   celery_worker:
     build:
       context: .
-      dockerfile: deployment/Dockerfile.celery
+      dockerfile: deployment/Dockerfile
+    command: celery -A app.core.celery_app.celery_app worker --loglevel=info
     env_file: .env
     depends_on:
       - postgres

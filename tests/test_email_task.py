@@ -10,23 +10,36 @@ from app.tasks import email as email_tasks
 
 @pytest.mark.asyncio
 async def test_celery_email_service_enqueues(mocker: MockerFixture) -> None:
-    apply_async = mocker.patch("app.services.email.send_activation_email.apply_async")
+    apply_async = mocker.patch("app.tasks.email.send_activation_email.apply_async")
 
     service = CeleryEmailService()
     await service.send_activation("user@example.com", "1234", 60)
 
-    apply_async.assert_called_once_with(args=("user@example.com", "1234", 60), queue=None)
+    apply_async.assert_called_once()
+    positional, keyword = apply_async.call_args
+    actual_args = None
+    queue = None
+    if keyword and "args" in keyword:
+        actual_args = keyword["args"]
+        queue = keyword.get("queue")
+    elif positional:
+        last_positional = positional[-1]
+        if isinstance(last_positional, dict) and "args" in last_positional:
+            actual_args = last_positional["args"]
+            queue = last_positional.get("queue")
+    assert actual_args == ("user@example.com", "1234", 60)
+    assert queue is None
 
 
 def _prepare_settings_env(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("DATABASE_URL", "postgresql://register:register@postgres:5432/user_activation")
     monkeypatch.setenv("REDIS_URL", "redis://redis:6379/0")
-    monkeypatch.setenv("EMAIL_API_URL", "https://localhost/v1/send")
+    monkeypatch.setenv("EMAIL_API_URL", "https://email-api.example.com/v1/send")
     monkeypatch.setenv("SYSTEM_EMAIL", "noreply@example.com")
     monkeypatch.setenv("SECRET_KEY", "secret")
     from app.core.config import get_settings
 
-    get_settings.cache_clear()  # type: ignore[attr-defined]
+    get_settings.cache_clear()
 
 
 def test_send_activation_email_success(monkeypatch: pytest.MonkeyPatch, mocker: MockerFixture) -> None:
@@ -36,10 +49,9 @@ def test_send_activation_email_success(monkeypatch: pytest.MonkeyPatch, mocker: 
     response.raise_for_status.return_value = None
     post = mocker.patch("httpx.post", return_value=response)
 
-    task = email_tasks.send_activation_email
-    retry = mocker.patch.object(task, "retry", side_effect=AssertionError("retry should not be called"))
+    retry = mocker.patch.object(email_tasks.send_activation_email, "retry", side_effect=AssertionError("retry should not be called"))
 
-    task.run("user@example.com", "1234", 60)
+    email_tasks.send_activation_email.run("user@example.com", "1234", 60)
 
     post.assert_called_once()
     args, kwargs = post.call_args
@@ -53,11 +65,10 @@ def test_send_activation_email_retries(monkeypatch: pytest.MonkeyPatch, mocker: 
 
     mocker.patch("httpx.post", side_effect=httpx.HTTPError("boom"))
 
-    task = email_tasks.send_activation_email
-    retry = mocker.patch.object(task, "retry", side_effect=RuntimeError("retry"))
+    retry = mocker.patch.object(email_tasks.send_activation_email, "retry", side_effect=RuntimeError("retry"))
 
     with pytest.raises(RuntimeError):
-        task.run("user@example.com", "1234", 60)
+        email_tasks.send_activation_email.run("user@example.com", "1234", 60)
 
     assert retry.call_count >= 1
     first_call = retry.call_args_list[0]

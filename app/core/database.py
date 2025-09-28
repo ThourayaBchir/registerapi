@@ -23,6 +23,7 @@ def get_pool() -> AsyncConnectionPool:
             min_size=1,
             max_size=10,
             timeout=30,
+            open=False,
         )
     return _POOL
 

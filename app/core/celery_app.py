@@ -4,21 +4,20 @@ from celery import Celery
 
 from app.core.config import get_settings
 
-celery_app = Celery("user_activation")
+_settings = get_settings()
+
+celery_app = Celery(
+    "user_activation",
+    broker=_settings.redis_url,
+    backend=_settings.redis_url,
+)
+
+celery_app.conf.update(
+    broker_connection_retry_on_startup=True,
+    task_default_queue="default",
+)
+
+celery_app.autodiscover_tasks(["app.tasks"])
 
 
-def configure_celery() -> Celery:
-    settings = get_settings()
-    celery_app.conf.update(
-        broker_url=settings.redis_url,
-        result_backend=settings.redis_url,
-    )
-    celery_app.autodiscover_tasks(["app.tasks"])
-    return celery_app
-
-
-configure_celery()
-
-
-def get_celery_app() -> Celery:
-    return celery_app
+__all__ = ["celery_app"]
