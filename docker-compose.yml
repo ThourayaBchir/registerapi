@@ -5,8 +5,7 @@ services:
     build:
       context: .
       dockerfile: deployment/Dockerfile
-    # command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
-    # command: python -m debugpy --listen 0.0.0.0:8001 --wait-for-client -m uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
     env_file: .env
     depends_on:
       - postgres
@@ -14,14 +13,7 @@ services:
       - mock_email
     ports:
       - "8000:8000"
-      - "8001:8001"
     restart: unless-stopped
-    volumes:
-      - ./:/app  # Maps to /app in container (matches remoteRoot)
-    command: python -m debugpy --listen 0.0.0.0:8001  --wait-for-client -m uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
-    stdin_open: true
-    tty: true
-
 
   celery_worker:
     build:

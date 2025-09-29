@@ -15,6 +15,5 @@ scalar-fastapi
 pytest
 pytest-asyncio
 pytest-mock
-debugpy
 black
 ruff

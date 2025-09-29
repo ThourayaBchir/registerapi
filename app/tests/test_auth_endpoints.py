@@ -107,7 +107,7 @@ async def test_register_endpoint_sends_code(api_client):
     response = await client.post(
         "/auth/register", json={"email": "alice@example.com", "password": "Passw0rd!1"}
     )
-    assert response.status_code == status.HTTP_202_ACCEPTED
+    assert response.status_code == status.HTTP_201_CREATED
     assert response.json()["detail"] == "Activation email sent"
     assert "alice@example.com" in email_service.sent_codes
 

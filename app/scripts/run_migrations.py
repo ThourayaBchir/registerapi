@@ -10,7 +10,7 @@ from psycopg import AsyncConnection
 
 from app.core.config import get_settings
 
-MIGRATIONS_DIR = Path(__file__).resolve().parent.parent / "app" / "db" / "migrations"
+MIGRATIONS_DIR = Path(__file__).resolve().parent.parent / "db" / "migrations"
 
 
 def _load_migrations() -> Iterable[Path]:

@@ -36,8 +36,6 @@ click-plugins==1.1.1.2
     # via celery
 click-repl==0.3.0
     # via celery
-debugpy==1.8.17
-    # via -r requirements.in
 dependency-injector==4.48.2
     # via -r requirements.in
 dnspython==2.8.0

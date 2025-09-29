@@ -9,45 +9,53 @@ Production-ready scaffold for a FastAPI registration and activation service back
 
 ## Quick Start
 
-### Docker Compose (recommended)
+### Docker Compose
+
+1. Start the stack:
 
 ```bash
-docker compose up --build
+docker compose up --build -d
+```
+
+2. Run migrations:
+```bash
+docker compose exec api sh -c "cd /app && python -m app.scripts.run_migrations"
+```
+3. Try it out:
+```bash
+http://localhost:8000/docs
+```
+4. Try it with curl:
+```bash
+curl http://localhost:8000/auth/register \
+  --request POST \
+  --header 'Content-Type: application/json' \
+  --data '{
+  "email": "abc@abc.com",
+  "password": "Abcdefg@0"
+}'
+
 ```
 
 Containers expose:
 
 - API: <http://localhost:8000>
 - Scalar docs UI: <http://localhost:8000/docs>
-- Mock email API: <http://localhost:8080/v1/send>
+- Mock email API: <http://localhost:8080>
 - PostgreSQL: `localhost:5432` (user/password: `register`)
 - Redis: `localhost:6379`
 
-Copy `.env.example` to `.env` before starting and adjust secrets as needed.
-
-## Manual Run
-
-```bash
-python -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
-TEST_DATABASE_URL=postgresql://register:register@localhost:5432/user_activation pytest
-uvicorn app.main:app --reload
-```
-
-Before launching, copy `.env.example` to `.env`, update secrets, and run `python scripts/run_migrations.py` once to apply database schema changes. Ensure PostgreSQL/Redis are running locally (start them via `docker compose up -d postgres redis` or your preferred services manager).
 
 ## API Documentation
 
-Scalar API reference is available at `/docs`. OpenAPI JSON is served at `/openapi.json` if you need to integrate with external tooling.
+Scalar API reference is available at `/docs`. OpenAPI JSON is served at `/openapi.json` if needed to integrate with external tooling.
 
 ### Trying the API via `/docs`
 
-1. Start the stack (Docker Compose or manual run).
+1. Start the stack (Docker Compose).
 2. Navigate to <http://localhost:8000/docs>.
 3. Pick an endpoint, choose **Try it out**, and supply the payload.
-4. For endpoints requiring Basic Auth (`/auth/resend`, `/auth/activate`), supply the email/password you used during registration.
-5. Review the live response or copy the generated curl command for further testing.
+4. For endpoints requiring Basic Auth (`/auth/resend`, `/auth/activate`).
 
 ## Project Structure
 
@@ -59,9 +67,11 @@ app/
   repositories/   # Raw SQL data access
   tasks/          # Celery tasks
   utils/          # Helpers (e.g., email templates)
+  tests/          # Unit, integration, and e2e tests
+  scripts/        # Utility scripts
 depoyment/
   Dockerfile      # Multi-stage build used by all services
-tests/            # Unit, integration, and e2e tests
+
 ```
 
 ## Architecture Overview
@@ -81,37 +91,32 @@ tests/            # Unit, integration, and e2e tests
 3. **Activate** – `/auth/activate` checks the submitted code, activates the user on success, resets rate limits, or records failures for lockout.
 4. **Email dispatch** – Celery workers execute `send_activation_email`, render templates, and POST to `EMAIL_API_URL` with retries.
 
-## Production Readiness
+## For Production
 
-- **Configuration & Secrets** – All runtime settings originate from environment variables (see `.env.example`). For production, load them from your secret manager (e.g. AWS SSM, Azure Key Vault, HashiCorp Vault) rather than bundling a `.env` file. Rotate `SECRET_KEY`, database credentials, and Redis passwords regularly.
-- **Database Migrations** – Before rolling out a release, run `python scripts/run_migrations.py` with the production `DATABASE_URL`. The runner executes each `*.sql` file in `app/db/migrations` in lexical order and exits cleanly if the schema is current.
 - **Application & Worker Processes** – Launch the API with a production ASGI server (`uvicorn app.main:app --workers N --host 0.0.0.0 --port 8000`) managed by systemd/Supervisor/Kubernetes and fronted by a reverse proxy. Run the Celery worker separately (`celery -A app.core.celery_app.celery_app worker`) so background email dispatch stays decoupled from API traffic.
-- **Email Delivery** – Point `EMAIL_API_URL` at your mail provider. Monitor Celery retries and provider responses; the bundled mock server is for local development only.
-- **Redis & Rate Limiting** – Provision a managed Redis instance with persistence/high availability, since it powers both Celery (broker/result backend) and rate limiting. Tune thresholds in `app/core/constants.py` to match policy.
-- **Observability & Health** – `/health/check` serves as a readiness probe. Ship API and worker logs to your observability stack and consider adding metrics/traces around activation attempts, rate limiting, and email dispatch.
-- **Security Posture** – Passwords are hashed automatically via `passlib`. Enforce TLS end-to-end, align password complexity with your governance, and keep resend/activate flows protected by Basic Auth (credentials supplied via env vars).
-- **Testing & CI** – The pytest suite covers repositories, services, Celery tasks, and API routes. In CI/CD, point `TEST_DATABASE_URL` to an ephemeral Postgres instance and run `pytest` before promoting builds.
+- **Health** – `/health/check` serves as a readiness probe. 
 
-## Testing
+## Running tests
 
-Set `TEST_DATABASE_URL` to a reachable Postgres instance (default points to `localhost:5432`). Then run:
 
 ```bash
-source .venv/bin/activate
-export TEST_DATABASE_URL=postgresql://register:register@localhost:5432/user_activation
-pytest
+docker compose exec api pytest ./app/tests
+
+
 ```
 
-Using Docker Compose, you can run tests inside the API container:
-
-```bash
-docker compose exec api pytest
-```
 
 ## Code Quality
 
-- Run `black .` to auto-format the codebase using `pyproject.toml` settings: `docker compose exec api black .`
-- Run `ruff check .` to lint for style, correctness, and import issues: `docker compose exec api ruff check .`
+- Run `black .` to auto-format the codebase using `pyproject.toml` settings: 
+
+```bash
+docker compose exec api black .
+```
+- Run `ruff check .` to lint for style, correctness, and import issues: 
+```bash
+docker compose exec api ruff check .
+```
 
 
 ## Maintenance Notes

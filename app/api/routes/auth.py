@@ -27,7 +27,7 @@ def _retry_after_headers(exc: RateLimitExceeded) -> dict[str, str]:
     return {"Retry-After": str(exc.retry_after)}
 
 
-@router.post("/register", status_code=status.HTTP_202_ACCEPTED)
+@router.post("/register", status_code=status.HTTP_201_CREATED)
 async def register_user(
     payload: UserCreate,
     service: Annotated[UserService, Depends(get_user_service)],
