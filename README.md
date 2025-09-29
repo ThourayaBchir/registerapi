@@ -19,7 +19,7 @@ docker compose up --build -d
 
 2. Run migrations:
 ```bash
-docker compose exec api sh -c "cd /app && python -m app.scripts.run_migrations"
+docker compose exec api python -m app.scripts.run_migrations
 ```
 3. Try it out:
 ```bash
@@ -44,7 +44,13 @@ Containers expose:
 - Mock email API: <http://localhost:8080>
 - PostgreSQL: `localhost:5432` (user/password: `register`)
 - Redis: `localhost:6379`
-
+To verify migrations ran:
+```bash
+docker compose exec postgres psql \
+  -U register \
+  -d user_activation \
+  -c '\\dt'
+```
 
 ## API Documentation
 
@@ -123,3 +129,10 @@ docker compose exec api ruff check .
 
 - Celery broker/result backend default to the Redis URL defined in `.env`. Override with `CELERY_BROKER_URL`/`CELERY_RESULT_BACKEND` if needed.
 - Activation codes expire based on `ACTIVATION_CODE_TTL_SECONDS` (default 60 seconds) and are stored in PostgreSQL.
+
+
+## Clean All
+
+```bash
+docker compose down --volumes --remove-orphans --rmi local
+```
